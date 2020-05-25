@@ -1,0 +1,43 @@
+{
+	"name": "Strava Auto follower",
+	"description": "It automatically follows/unfollows on Strava",
+	"version": "1.0.0",
+	"manifest_version": 2,
+	"icons": {
+		"16": "/images/icon-16x16.png",
+		"48": "/images/icon-48x48.png",
+		"96": "/images/icon-96x96.png",
+		"128": "/images/icon-128x128.png",
+		"148": "/images/icon-148x148.png"
+	},
+	"minimum_chrome_version": "16.0.884",
+	"permissions": [
+		"tabs",
+		"storage",
+		"*://*.strava.com/*"
+	],
+	"page_action": {
+		"default_icon": {
+			"148": "/images/icon-148x148.png"
+		},
+		"default_title": "Strava Auto follower"
+	},
+	"background": {
+		"scripts": [
+			"background.js"
+		],
+		"persistent": true
+	},
+	"content_scripts": [
+		{
+			"matches": ["*://*.strava.com/*"],
+			"css": [],
+			"js": [
+				"jquery-3.1.0.min.js",
+				"content.js"
+			],
+			"run_at": "document_start"
+		}
+	],
+	"web_accessible_resources": ["./images/icon-96x96.png"]
+}
