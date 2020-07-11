@@ -3,6 +3,7 @@
 	"description": "It automatically follows/unfollows on Strava",
 	"version": "1.0.0",
 	"manifest_version": 2,
+	"homepage_url": "https://www.strava.com",
 	"icons": {
 		"16": "/images/icon-16x16.png",
 		"48": "/images/icon-48x48.png",

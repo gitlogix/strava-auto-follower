@@ -1,11 +1,13 @@
-const CREATE_SHADOWDOM = "CREATE_SHADOWDOM";
-const OPEN_POPUP = "OPEN_POPUP";
-const LETS_START_FOLLOWING = "LETS_START_FOLLOWING"
-const START_FOLLOWING = "START_FOLLOWING";
-const LETS_START_UNFOLLOWING = "LETS_START_UNFOLLOWING"
-const START_UNFOLLOWING = "START_UNFOLLOWING";
-const LETS_STOP = "LETS_STOP"
-const SHOW_PAGE_ACTION = "SHOW_PAGE_ACTION";
+const {
+    CREATE_SHADOWDOM,
+    OPEN_POPUP,
+    LETS_START_FOLLOWING,
+    START_FOLLOWING,
+    LETS_START_UNFOLLOWING,
+    START_UNFOLLOWING,
+    LETS_STOP,
+    SHOW_PAGE_ACTION
+} = require("./constants.json");
 
 let shadowDOM = undefined;
 
@@ -47,35 +49,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 })
 
 function startFollowing(isSecond) {
-    if (window.location.href.includes("strava.com/athletes/search") ||
-        (window.location.href.includes("www.strava.com/athletes/") && window.location.href.includes("/follows?type=following"))
+    if  (window.location.href.includes("strava.com/athletes/search") ||
+            (window.location.href.includes("www.strava.com/athletes/") &&
+                (window.location.href.includes("type=following") ||
+                    window.location.href.includes("type=followers") ||
+                    window.location.href.includes("type=suggested")
+            )
+        )
     ) {
         if ($("[data-state='follow']").length ||
             $("[data-state='follow_with_approval']").length ||
             (isSecond && ($("[data-state='unfollow']").length ||
-            $("[data-state='cancel_pending']").length))
+            $("[data-state='cancel_pending']").length) ||
+            $("[data-state='unfollow_for_approval']").length)
         ) {
-            $("button[data-state='follow']").trigger('click')
-            $("button[data-state='follow_with_approval']").trigger('click')
-            const nextPageTimer = this.setInterval(() => {
-                clearInterval(nextPageTimer)
-                const nextPageNumber = $(".pagination .active").next().text()
-                if (!isNaN(nextPageNumber)) {
-                    if (window.location.href.includes("type=following")) {
-                        let atheletsID = window.location.href.match(/athletes\/[0-9]*\/follows/)[0].substr(9)
-                        atheletsID = atheletsID.substr(0, atheletsID.length - 8)
-                        window.open(`https://www.strava.com/athletes/${atheletsID}/follows?page=${nextPageNumber}&type=following`, "_self")
-                    } else if (window.location.href.includes("https://www.strava.com/athletes/search") && window.location.href.includes("&text=")) {
-                        let keyword = window.location.href.match(/text=([^&]*)+/)[0].substr(5)
-                        window.open(`https://www.strava.com/athletes/search?page=${nextPageNumber}&text=${keyword}&utf8=%E2%9C%93`, "_self")
-                    } else {
-                        window.open(`https://www.strava.com/athletes/search?page=${nextPageNumber}`, "_self")
-                    }
-                } else {
-                    chrome.runtime.sendMessage({ reason: LETS_STOP });
-                    !shadowDOM && location.reload()
-                }
-            }, 3000);
+            $("[data-state='follow']").trigger('click')
+            $("[data-state='follow_with_approval']").trigger('click')
+            nextPage(true)
         } else {
             chrome.runtime.sendMessage({ reason: LETS_STOP });
             alert("Oops, We couldn't detect anyone to follow")
@@ -83,42 +73,31 @@ function startFollowing(isSecond) {
         }
     } else {
         chrome.runtime.sendMessage({ reason: LETS_STOP });
-        alert("Oops, We couldn't detect anyone to follow")
+        alert("Oops, Page doesn't exist")
         !shadowDOM && location.reload()
     }
 }
 
 
 function startUnfollowing(isSecond) {
-    if (window.location.href.includes("strava.com/athletes/search") ||
-        (window.location.href.includes("www.strava.com/athletes/") && window.location.href.includes("type=following"))
+    if  (window.location.href.includes("strava.com/athletes/search") ||
+            (window.location.href.includes("www.strava.com/athletes/") &&
+                (window.location.href.includes("type=following") ||
+                    window.location.href.includes("type=followers") ||
+                    window.location.href.includes("type=suggested")
+            )
+        )
     ) {
         if ($("[data-state='unfollow']").length ||
             $("[data-state='cancel_pending']").length ||
+            $("[data-state='unfollow_for_approval']") ||
             (isSecond && ($("[data-state='follow']").length ||
             $("[data-state='follow_with_approval']").length))
         ) {
             $("[data-state='unfollow']").trigger('click')
             $("[data-state='cancel_pending']").trigger('click')
-            const nextPageTimer = this.setInterval(() => {
-                clearInterval(nextPageTimer)
-                const nextPageNumber = $(".pagination .active").next().text()
-                if (!isNaN(nextPageNumber)) {
-                    if (window.location.href.includes("type=following")) {
-                        let atheletsID = window.location.href.match(/athletes\/[0-9]*\/follows/)[0].substr(9)
-                        atheletsID = atheletsID.substr(0, atheletsID.length - 8)
-                        window.open(`https://www.strava.com/athletes/${atheletsID}/follows?page=${nextPageNumber}&type=following`, "_self")
-                    } else if (window.location.href.includes("https://www.strava.com/athletes/search") && window.location.href.includes("&text=")) {
-                        let keyword = window.location.href.match(/text=([^&]*)+/)[0].substr(5)
-                        window.open(`https://www.strava.com/athletes/search?page=${nextPageNumber}&text=${keyword}&utf8=%E2%9C%93`, "_self")
-                    } else {
-                        window.open(`https://www.strava.com/athletes/search?page=${nextPageNumber}`, "_self")
-                    }  
-                } else {
-                    chrome.runtime.sendMessage({ reason: LETS_STOP });
-                    !shadowDOM && location.reload()
-                }
-            }, 3000);
+            $("[data-state='unfollow_for_approval']").trigger('click')
+            nextPage()
         } else {
             chrome.runtime.sendMessage({ reason: LETS_STOP });
             alert("Oops, We couldn't detect anyone to unfollow")
@@ -126,9 +105,44 @@ function startUnfollowing(isSecond) {
         }
     } else {
         chrome.runtime.sendMessage({ reason: LETS_STOP });
-        alert("Oops, We couldn't detect anyone to unfollow")
+        alert("Oops, Page doesn't exist")
         !shadowDOM && location.reload()
     }
+}
+
+function nextPage(isFollowing) {
+    const nextPageTimer = this.setInterval(() => {
+        clearInterval(nextPageTimer)
+        const nextPageNumber = $(".pagination .active").next().text()
+        if (nextPageNumber && !isNaN(nextPageNumber)) {
+            if (window.location.href.includes("type=following")) {
+                let atheletsID = window.location.href.match(/athletes\/[0-9]*\/follows/)[0].substr(9)
+                atheletsID = atheletsID.substr(0, atheletsID.length - 8)
+                console.log(document.querySelector(".tab-content .drop-down-menu .options li").innerText)
+                if (document.querySelector(".tab-content .drop-down-menu .options li").innerText === "I'm Following") {
+                    window.open(`https://www.strava.com/athletes/${atheletsID}/follows?page=${nextPageNumber - 1}&type=following`, "_self")
+                } else {
+                    window.open(`https://www.strava.com/athletes/${atheletsID}/follows?page=${nextPageNumber}&type=following`, "_self")
+                }
+            } else if (window.location.href.includes("type=followers")) {
+                let atheletsID = window.location.href.match(/athletes\/[0-9]*\/follows/)[0].substr(9)
+                atheletsID = atheletsID.substr(0, atheletsID.length - 8)
+                window.open(`https://www.strava.com/athletes/${atheletsID}/follows?page=${nextPageNumber}&type=followers`, "_self")
+            } else if (window.location.href.includes("type=suggested")) {
+                let atheletsID = window.location.href.match(/athletes\/[0-9]*\/follows/)[0].substr(9)
+                atheletsID = atheletsID.substr(0, atheletsID.length - 8)
+                window.open(`https://www.strava.com/athletes/${atheletsID}/follows?page=${nextPageNumber}&type=suggested`, "_self")
+            } else if (window.location.href.includes("https://www.strava.com/athletes/search") && window.location.href.includes("&text=")) {
+                let keyword = window.location.href.match(/text=([^&]*)+/)[0].substr(5)
+                window.open(`https://www.strava.com/athletes/search?page=${nextPageNumber}&text=${keyword}&utf8=%E2%9C%93`, "_self")
+            } else {
+                window.open(`https://www.strava.com/athletes/search?page=${nextPageNumber}`, "_self")
+            }  
+        } else {
+            chrome.runtime.sendMessage({ reason: LETS_STOP });
+            location.reload()
+        }
+    }, 3000);
 }
 
 function createShadowDom() {

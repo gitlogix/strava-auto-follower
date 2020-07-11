@@ -1,11 +1,13 @@
-const CREATE_SHADOWDOM = "CREATE_SHADOWDOM";
-const OPEN_POPUP = "OPEN_POPUP";
-const LETS_START_FOLLOWING = "LETS_START_FOLLOWING"
-const START_FOLLOWING = "START_FOLLOWING";
-const LETS_START_UNFOLLOWING = "LETS_START_UNFOLLOWING"
-const START_UNFOLLOWING = "START_UNFOLLOWING";
-const LETS_STOP = "LETS_STOP";
-const SHOW_PAGE_ACTION = "SHOW_PAGE_ACTION";
+const {
+    CREATE_SHADOWDOM,
+    OPEN_POPUP,
+    LETS_START_FOLLOWING,
+    START_FOLLOWING,
+    LETS_START_UNFOLLOWING,
+    START_UNFOLLOWING,
+    LETS_STOP,
+    SHOW_PAGE_ACTION
+} = require("./constants.json");
 
 let site = {};
 let state, noOfPages = 0, maxNumberOfPages = 1
@@ -16,6 +18,7 @@ chrome.pageAction.onClicked.addListener(tab => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log(message)
     if (message.reason === LETS_START_FOLLOWING) {
         maxNumberOfPages = message.maxNumberOfPages;
         state = START_FOLLOWING;
